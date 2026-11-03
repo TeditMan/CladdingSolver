@@ -12,7 +12,11 @@ endif()
 project ("CladdingSolver")
 
 # Add source to this project's executable.
-add_executable (CladdingSolver "CladdingSolver.cpp" "CladdingSolver.h" "Headers/Grid.h" "Source/Grid.cpp")
+add_executable (CladdingSolver "Source/CladdingSolver.cpp"  "Headers/Grid.h" "Source/Grid.cpp" "Headers/InputData.h" "Source/InputData.cpp" "main.cpp" "Headers/CladdingSolver.h" "Headers/FDSystem.h" "Source/FDSystem.cpp" "Headers/Discretization.h" "Source/Discretization.cpp" "Headers/Triplet.h")
+
+target_include_directories(CladdingSolver PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/Headers
+)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET CladdingSolver PROPERTY CXX_STANDARD 20)
