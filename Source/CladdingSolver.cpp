@@ -1,5 +1,6 @@
-﻿#include "CladdingSolver.h"
-#include <iostream>
+﻿#include <iostream>
+
+#include "CladdingSolver.h"
 
 void CladdingSolver::run()
 {

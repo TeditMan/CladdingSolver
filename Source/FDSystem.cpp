@@ -2,13 +2,11 @@
 #include <vector>
 #include <array>
 
-
 #include "FDSystem.h"
 #include "Grid.h"
 #include "Discretization.h"
 #include "Triplet.h"
 #include "InputData.h"
-
 
 FDSystem::FDSystem(const Discretization& d, const Grid& g, const InputData& i)
     : discretization_(d)

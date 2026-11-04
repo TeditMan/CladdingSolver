@@ -1,7 +1,7 @@
-#include "InputData.h"
-
 #include <cmath>
 #include <stdexcept>
+
+#include "InputData.h"
 
 InputData::InputData(Pressure pressure, Geometry geometry, MaterialProperties properties)
     : pressure_(pressure)

@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "Grid.h"
 #include "InputData.h"
 
@@ -8,6 +10,11 @@ Grid::Grid(const InputData& inpD, const NodesData& nD)
     , Ro_(inpD.geometry().outerRadius)
     , H_(inpD.geometry().height)
 {
+    if (Nr_ < 3 || Nz_ < 3)
+    {
+        throw std::invalid_argument{ "Grid must have at least 3 nodes in each direction" };
+    }
+    
     dr_ = (Ro_ - Ri_) / (Nr_ - 1);
     dz_ = H_ / (Nz_ - 1);
 }
