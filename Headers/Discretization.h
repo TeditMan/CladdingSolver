@@ -9,7 +9,10 @@
 class Discretization
 {
 public:
-    Discretization(const Grid&);
+    Discretization(const Grid& grid)
+        : grid_(grid)
+    { }
+
     virtual ~Discretization() = default;
 
     virtual std::vector<Triplet> D0  (std::size_t, std::size_t) const = 0;
@@ -23,11 +26,13 @@ protected:
     const Grid& grid_;
 };
 
-
-
 class CentralD : public Discretization
 { 
 public:
+    explicit CentralD(const Grid& grid)
+        : Discretization(grid)
+    { }
+
     virtual std::vector<Triplet> D0  (std::size_t, std::size_t) const override;
     virtual std::vector<Triplet> D_r (std::size_t, std::size_t) const override;
     virtual std::vector<Triplet> D_z (std::size_t, std::size_t) const override;

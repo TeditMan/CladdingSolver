@@ -10,8 +10,8 @@ InputData::InputData(Pressure pressure, Geometry geometry, MaterialProperties pr
 {
     if (!std::isfinite(pressure.Pgap) ||
         !std::isfinite(pressure.Pcool) ||
-        !(pressure.Pgap > 0.0) ||
-        !(pressure.Pcool > 0.0))
+        !(pressure.Pgap >= 0.0) ||
+        !(pressure.Pcool >= 0.0))
     {
         throw std::invalid_argument{"Invalid pressure values"};
     }
@@ -34,8 +34,8 @@ InputData::InputData(Pressure pressure, Geometry geometry, MaterialProperties pr
         throw std::invalid_argument{"Invalid material properties"};
     }
 
-    conditions_.simga_rr_Ri = -pressure_.Pgap;
-    conditions_.simga_rr_Ro = -pressure_.Pcool;
+    conditions_.sigma_rr_Ri = -pressure_.Pgap;
+    conditions_.sigma_rr_Ro = -pressure_.Pcool;
     conditions_.sigma_zz_H =
         (pressure.Pgap * geometry.innerRadius * geometry.innerRadius -
          pressure.Pcool * geometry.outerRadius * geometry.outerRadius) /

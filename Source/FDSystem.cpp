@@ -56,7 +56,7 @@ std::array<std::vector<Triplet>, 2> FDSystem::eq2_left(std::size_t i, std::size_
     return { vectorV, vectorW };
 }
 
-void FDSystem::pushMinorToMajor(std::vector<Triplet> minor, std::vector<Triplet> major, double mult)
+void FDSystem::pushMinorToMajor(std::vector<Triplet> minor, std::vector<Triplet>& major, double mult)
 {
     for (Triplet cand : minor)
     {
@@ -81,6 +81,8 @@ void FDSystem::pushMinorToMajor(std::vector<Triplet> minor, std::vector<Triplet>
 
 void FDSystem::fillMatrix()
 {
+    A_.clear();
+    
     for (std::size_t j{ 1 }; j < grid_.Nz() - 1; ++j)
     {
         for (std::size_t i{ 1 }; i < grid_.Nr() - 1; ++i)

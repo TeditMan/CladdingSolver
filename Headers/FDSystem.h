@@ -27,6 +27,6 @@ private:
     std::array<std::vector<Triplet>, 2> eq1_left(std::size_t, std::size_t);
     std::array<std::vector<Triplet>, 2> eq2_left(std::size_t, std::size_t);
 
-    void pushMinorToMajor(std::vector<Triplet>, std::vector<Triplet>, double mult = 1);
+    void pushMinorToMajor(std::vector<Triplet>, std::vector<Triplet>&, double mult = 1);
 
 };
