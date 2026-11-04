@@ -56,7 +56,7 @@ std::array<std::vector<Triplet>, 2> FDSystem::eq2_left(std::size_t i, std::size_
     return { vectorV, vectorW };
 }
 
-void FDSystem::pushMinorToMajor(std::vector<Triplet> minor, std::vector<Triplet>& major, double mult)
+void FDSystem::pushMinorToMajor(const std::vector<Triplet>& minor, std::vector<Triplet>& major, double mult)
 {
     for (Triplet cand : minor)
     {
