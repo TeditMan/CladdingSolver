@@ -18,11 +18,11 @@ public:
 
 private:
     std::vector<Triplet> A_{};
-    std::vector<double> b_{};
+    std::vector<double>  b_{};
 
     const Discretization& discretization_;
-    const Grid& grid_;
-    const InputData& inputData_;
+    const Grid&           grid_;
+    const InputData&      inputData_;
 
     std::array<std::vector<Triplet>, 2> eq1_left(std::size_t, std::size_t);
     std::array<std::vector<Triplet>, 2> eq2_left(std::size_t, std::size_t);

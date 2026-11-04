@@ -25,11 +25,11 @@ std::array<std::vector<Triplet>, 2> FDSystem::eq1_left(std::size_t i, std::size_
     const double mult1{ 2.0 * (1.0 - nu) };
     const double mult2{ 1.0 - 2.0 * nu };
 
-    pushMinorToMajor(discretization_.D_rr(i, j), vectorV, mult1);
-    pushMinorToMajor(discretization_.D_r (i, j), vectorV, mult1 / ri);
-    pushMinorToMajor(discretization_.D0  (i, j), vectorV, - mult1 / ri / ri);
-    pushMinorToMajor(discretization_.D_zz(i, j), vectorV, mult2);
-    pushMinorToMajor(discretization_.D_rz(i, j), vectorW);
+    pushMinorToMajor(discretization_.D_rr_central(i, j), vectorV, mult1);
+    pushMinorToMajor(discretization_.D_r_central (i, j), vectorV, mult1 / ri);
+    pushMinorToMajor(discretization_.D0          (i, j), vectorV, - mult1 / ri / ri);
+    pushMinorToMajor(discretization_.D_zz_central(i, j), vectorV, mult2);
+    pushMinorToMajor(discretization_.D_rz_central(i, j), vectorW);
 
     return { vectorV, vectorW };
 }
@@ -45,11 +45,11 @@ std::array<std::vector<Triplet>, 2> FDSystem::eq2_left(std::size_t i, std::size_
     const double mult1{ 2.0 * (1.0 - nu) };
     const double mult2{ 1.0 - 2.0 * nu };
 
-    pushMinorToMajor(discretization_.D_rr(i, j), vectorW, mult2);
-    pushMinorToMajor(discretization_.D_r (i, j), vectorW, mult2 / ri);
-    pushMinorToMajor(discretization_.D_zz(i, j), vectorW, mult1);
-    pushMinorToMajor(discretization_.D_z (i, j), vectorV, 1 / ri);
-    pushMinorToMajor(discretization_.D_rz(i, j), vectorV);
+    pushMinorToMajor(discretization_.D_rr_central(i, j), vectorW, mult2);
+    pushMinorToMajor(discretization_.D_r_central (i, j), vectorW, mult2 / ri);
+    pushMinorToMajor(discretization_.D_zz_central(i, j), vectorW, mult1);
+    pushMinorToMajor(discretization_.D_z_central (i, j), vectorV, 1 / ri);
+    pushMinorToMajor(discretization_.D_rz_central(i, j), vectorV);
 
     return { vectorV, vectorW };
 }

@@ -9,34 +9,24 @@
 class Discretization
 {
 public:
-    Discretization(const Grid& grid)
+    explicit Discretization(const Grid& grid)
         : grid_(grid)
     { }
 
-    virtual ~Discretization() = default;
+    std::vector<Triplet> D0           (std::size_t, std::size_t) const;
 
-    virtual std::vector<Triplet> D0  (std::size_t, std::size_t) const = 0;
-    virtual std::vector<Triplet> D_r (std::size_t, std::size_t) const = 0;
-    virtual std::vector<Triplet> D_z (std::size_t, std::size_t) const = 0;
-    virtual std::vector<Triplet> D_rr(std::size_t, std::size_t) const = 0;
-    virtual std::vector<Triplet> D_zz(std::size_t, std::size_t) const = 0;
-    virtual std::vector<Triplet> D_rz(std::size_t, std::size_t) const = 0;
+    std::vector<Triplet> D_r_central (std::size_t, std::size_t) const;
+    std::vector<Triplet> D_z_central (std::size_t, std::size_t) const;
+    std::vector<Triplet> D_rr_central(std::size_t, std::size_t) const;
+    std::vector<Triplet> D_zz_central(std::size_t, std::size_t) const;
+    std::vector<Triplet> D_rz_central(std::size_t, std::size_t) const;
 
-protected:
+    std::vector<Triplet> D_r_forward (std::size_t, std::size_t) const;
+    std::vector<Triplet> D_z_forward (std::size_t, std::size_t) const;
+    std::vector<Triplet> D_r_backward(std::size_t, std::size_t) const;
+    std::vector<Triplet> D_z_backward(std::size_t, std::size_t) const;
+
+private:
     const Grid& grid_;
-};
 
-class CentralD : public Discretization
-{ 
-public:
-    explicit CentralD(const Grid& grid)
-        : Discretization(grid)
-    { }
-
-    virtual std::vector<Triplet> D0  (std::size_t, std::size_t) const override;
-    virtual std::vector<Triplet> D_r (std::size_t, std::size_t) const override;
-    virtual std::vector<Triplet> D_z (std::size_t, std::size_t) const override;
-    virtual std::vector<Triplet> D_rr(std::size_t, std::size_t) const override;
-    virtual std::vector<Triplet> D_zz(std::size_t, std::size_t) const override;
-    virtual std::vector<Triplet> D_rz(std::size_t, std::size_t) const override;
 };
