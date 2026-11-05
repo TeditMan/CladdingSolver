@@ -239,10 +239,15 @@ void FDSystem::implementBoundaries()
     A_.push_back({ right_bottom_2, right_bottom_2, 1 });
     b_[right_bottom_2] = 0.0;
 
+    A_.push_back({ left_bottom_1, left_bottom_1, 1 });
+    b_[left_bottom_1] = 0.0;
+    A_.push_back({ left_bottom_2, left_bottom_2, 1 });
+    b_[left_bottom_2] = 0.0;
+
     const std::size_t left_top_1{ 2 * grid_.convertIndices(0, grid_.Nz() - 1) };
-    const std::size_t left_top_2{ left_bottom_1 + 1 };
+    const std::size_t left_top_2{ left_top_1 + 1 };
     const std::size_t right_top_1{ 2 * grid_.convertIndices(grid_.Nr() - 1, grid_.Nz() - 1) };
-    const std::size_t right_top_2{ right_bottom_1 + 1 };
+    const std::size_t right_top_2{ right_top_1 + 1 };
 
     A_.push_back({ left_top_1, left_top_1, 1 });
     b_[left_top_1] = 0.0;
@@ -262,7 +267,7 @@ void FDSystem::implementBoundaries()
 
     pushMinorToMajor(discretization_.D_z_backward(grid_.Nr() - 1, j), vectorW_right, (2 * mu_ + lambda_));
     pushMinorToMajor(discretization_.D_r_backward(grid_.Nr() - 1, j), vectorV_right, lambda_);
-    pushMinorToMajor(discretization_.D0(grid_.Nr() - 1, j), vectorV_right, lambda_ / inputData_.geometry().innerRadius);
+    pushMinorToMajor(discretization_.D0(grid_.Nr() - 1, j), vectorV_right, lambda_ / inputData_.geometry().outerRadius);
 
     addVectorToA_(vectorV_left, left_top_2, 0);
     addVectorToA_(vectorW_left, left_top_2, 1);
