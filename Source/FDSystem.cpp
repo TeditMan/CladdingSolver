@@ -16,8 +16,6 @@ FDSystem::FDSystem(const Discretization& d, const Grid& g, const InputData& i)
     , lambda_(inputData_.properties().youngModulus* inputData_.properties().poissonRatio /
               ((1 + inputData_.properties().poissonRatio) * (1 - 2 * inputData_.properties().poissonRatio)))
 { 
-    A_.clear();
-    b_.assign(2 * grid_.Nr() * grid_.Nz(), 0.0);
     fillSystem();
 }
 
@@ -111,6 +109,21 @@ std::array<std::vector<Triplet>, 2> FDSystem::bound2_Ro_left(std::size_t j)
     return { vectorV, vectorW };
 }
 
+std::array<std::vector<Triplet>, 2> FDSystem::bound2_H_left(std::size_t i)
+{
+    std::vector<Triplet> vectorV{};
+    std::vector<Triplet> vectorW{};
+
+    const std::size_t j{ grid_.Nz() - 1 };
+    const double ri{ inputData_.geometry().innerRadius + i * grid_.dr() };
+
+    pushMinorToMajor(discretization_.D_z_backward(i, j), vectorW, (2 * mu_ + lambda_));
+    pushMinorToMajor(discretization_.D_r_central(i, j), vectorV, lambda_);
+    pushMinorToMajor(discretization_.D0(i, j), vectorV, lambda_ / ri);
+
+    return { vectorV, vectorW };
+}
+
 void FDSystem::pushMinorToMajor(const std::vector<Triplet>& minor, std::vector<Triplet>& major, double mult)
 {
     for (Triplet cand : minor)
@@ -192,10 +205,78 @@ void FDSystem::implementBoundaries()
         addVectorToA_(W2_Ro, row2_Ro, 1);
         b_[row2_Ro] = inputData_.conditions().sigma_rz_Ro;
     }
+
+    for (std::size_t i{ 1 }; i < grid_.Nr() - 1; ++i)
+    {
+        const std::size_t row1_0{ 2 * grid_.convertIndices(i, 0) };
+        const std::size_t row2_0{ row1_0 + 1 };
+
+        const std::size_t row1_H{ 2 * grid_.convertIndices(i, grid_.Nz() - 1) };
+        const std::size_t row2_H{ row1_H + 1 };
+
+
+        A_.push_back({ row1_0, row1_0, 1 });
+        b_[row1_0] = 0.0;
+        A_.push_back({ row2_0, row2_0, 1 });
+        b_[row2_0] = 0.0;
+
+        A_.push_back({ row1_H, row1_H, 1 });
+        b_[row1_H] = 0.0;
+
+        auto [V, W] = bound2_H_left(i);
+        addVectorToA_(V, row2_H, 0);
+        addVectorToA_(W, row2_H, 1);
+        b_[row2_H] = inputData_.conditions().sigma_zz_H;
+    }
+
+    const std::size_t left_bottom_1{ 2 * grid_.convertIndices(0, 0) };
+    const std::size_t left_bottom_2{ left_bottom_1 + 1 };
+    const std::size_t right_bottom_1{ 2 * grid_.convertIndices(grid_.Nr() - 1, 0)};
+    const std::size_t right_bottom_2{ right_bottom_1 + 1 };
+
+    A_.push_back({ right_bottom_1, right_bottom_1, 1 });
+    b_[right_bottom_1] = 0.0;
+    A_.push_back({ right_bottom_2, right_bottom_2, 1 });
+    b_[right_bottom_2] = 0.0;
+
+    const std::size_t left_top_1{ 2 * grid_.convertIndices(0, grid_.Nz() - 1) };
+    const std::size_t left_top_2{ left_bottom_1 + 1 };
+    const std::size_t right_top_1{ 2 * grid_.convertIndices(grid_.Nr() - 1, grid_.Nz() - 1) };
+    const std::size_t right_top_2{ right_bottom_1 + 1 };
+
+    A_.push_back({ left_top_1, left_top_1, 1 });
+    b_[left_top_1] = 0.0;
+    A_.push_back({ right_top_1, right_top_1, 1 });
+    b_[right_top_1] = 0.0;
+
+    std::vector<Triplet> vectorV_left{};
+    std::vector<Triplet> vectorW_left{};
+    std::vector<Triplet> vectorV_right{};
+    std::vector<Triplet> vectorW_right{};
+
+    const std::size_t j{ grid_.Nz() - 1 };
+
+    pushMinorToMajor(discretization_.D_z_backward(0, j), vectorW_left, (2 * mu_ + lambda_));
+    pushMinorToMajor(discretization_.D_r_forward(0, j), vectorV_left, lambda_);
+    pushMinorToMajor(discretization_.D0(0, j), vectorV_left, lambda_ / inputData_.geometry().innerRadius);
+
+    pushMinorToMajor(discretization_.D_z_backward(grid_.Nr() - 1, j), vectorW_right, (2 * mu_ + lambda_));
+    pushMinorToMajor(discretization_.D_r_backward(grid_.Nr() - 1, j), vectorV_right, lambda_);
+    pushMinorToMajor(discretization_.D0(grid_.Nr() - 1, j), vectorV_right, lambda_ / inputData_.geometry().innerRadius);
+
+    addVectorToA_(vectorV_left, left_top_2, 0);
+    addVectorToA_(vectorW_left, left_top_2, 1);
+    b_[left_top_2] = inputData_.conditions().sigma_zz_H;
+    addVectorToA_(vectorV_right, right_top_2, 0);
+    addVectorToA_(vectorW_right, right_top_2, 1);
+    b_[right_top_2] = inputData_.conditions().sigma_zz_H;
 }
 
 void FDSystem::fillSystem()
 {
+    A_.clear();
+    b_.assign(2 * grid_.Nr() * grid_.Nz(), 0.0);
+
     implementEquations();
     implementBoundaries();
 }

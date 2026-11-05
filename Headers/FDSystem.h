@@ -34,6 +34,8 @@ private:
     std::array<std::vector<Triplet>, 2> bound1_Ro_left(std::size_t);
     std::array<std::vector<Triplet>, 2> bound2_Ro_left(std::size_t);
 
+    std::array<std::vector<Triplet>, 2> bound2_H_left(std::size_t);
+
     void addVectorToA_(const std::vector<Triplet>&, std::size_t, int);
     void pushMinorToMajor(const std::vector<Triplet>&, std::vector<Triplet>&, double mult = 1);
 
