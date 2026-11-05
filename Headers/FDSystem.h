@@ -14,6 +14,9 @@ class FDSystem
 public:
     FDSystem(const Discretization&, const Grid&, const InputData&);
 
+    const std::vector<Triplet>& matrix() const { return A_; }
+    const std::vector<double>& rhs() const { return b_; }
+
 private:
     const Discretization& discretization_;
     const Grid& grid_;
@@ -41,6 +44,8 @@ private:
 
     void implementEquations();
     void implementBoundaries();
+    void implementCorners();
+
     void fillSystem();
 
 };

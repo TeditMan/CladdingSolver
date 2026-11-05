@@ -176,6 +176,56 @@ void FDSystem::implementEquations()
     }
 }
 
+void FDSystem::implementCorners()
+{
+    const std::size_t left_bottom_1{ 2 * grid_.convertIndices(0, 0) };
+    const std::size_t left_bottom_2{ left_bottom_1 + 1 };
+    const std::size_t right_bottom_1{ 2 * grid_.convertIndices(grid_.Nr() - 1, 0) };
+    const std::size_t right_bottom_2{ right_bottom_1 + 1 };
+
+    A_.push_back({ right_bottom_1, right_bottom_1, 1 });
+    b_[right_bottom_1] = 0.0;
+    A_.push_back({ right_bottom_2, right_bottom_2, 1 });
+    b_[right_bottom_2] = 0.0;
+
+    A_.push_back({ left_bottom_1, left_bottom_1, 1 });
+    b_[left_bottom_1] = 0.0;
+    A_.push_back({ left_bottom_2, left_bottom_2, 1 });
+    b_[left_bottom_2] = 0.0;
+
+    const std::size_t left_top_1{ 2 * grid_.convertIndices(0, grid_.Nz() - 1) };
+    const std::size_t left_top_2{ left_top_1 + 1 };
+    const std::size_t right_top_1{ 2 * grid_.convertIndices(grid_.Nr() - 1, grid_.Nz() - 1) };
+    const std::size_t right_top_2{ right_top_1 + 1 };
+
+    A_.push_back({ left_top_1, left_top_1, 1 });
+    b_[left_top_1] = 0.0;
+    A_.push_back({ right_top_1, right_top_1, 1 });
+    b_[right_top_1] = 0.0;
+
+    std::vector<Triplet> vectorV_left{};
+    std::vector<Triplet> vectorW_left{};
+    std::vector<Triplet> vectorV_right{};
+    std::vector<Triplet> vectorW_right{};
+
+    const std::size_t j{ grid_.Nz() - 1 };
+
+    pushMinorToMajor(discretization_.D_z_backward(0, j), vectorW_left, (2 * mu_ + lambda_));
+    pushMinorToMajor(discretization_.D_r_forward(0, j), vectorV_left, lambda_);
+    pushMinorToMajor(discretization_.D0(0, j), vectorV_left, lambda_ / inputData_.geometry().innerRadius);
+
+    pushMinorToMajor(discretization_.D_z_backward(grid_.Nr() - 1, j), vectorW_right, (2 * mu_ + lambda_));
+    pushMinorToMajor(discretization_.D_r_backward(grid_.Nr() - 1, j), vectorV_right, lambda_);
+    pushMinorToMajor(discretization_.D0(grid_.Nr() - 1, j), vectorV_right, lambda_ / inputData_.geometry().outerRadius);
+
+    addVectorToA_(vectorV_left, left_top_2, 0);
+    addVectorToA_(vectorW_left, left_top_2, 1);
+    b_[left_top_2] = inputData_.conditions().sigma_zz_H;
+    addVectorToA_(vectorV_right, right_top_2, 0);
+    addVectorToA_(vectorW_right, right_top_2, 1);
+    b_[right_top_2] = inputData_.conditions().sigma_zz_H;
+}
+
 void FDSystem::implementBoundaries()
 {
     for (std::size_t j{ 1 }; j < grid_.Nz() - 1; ++j)
@@ -229,52 +279,7 @@ void FDSystem::implementBoundaries()
         b_[row2_H] = inputData_.conditions().sigma_zz_H;
     }
 
-    const std::size_t left_bottom_1{ 2 * grid_.convertIndices(0, 0) };
-    const std::size_t left_bottom_2{ left_bottom_1 + 1 };
-    const std::size_t right_bottom_1{ 2 * grid_.convertIndices(grid_.Nr() - 1, 0)};
-    const std::size_t right_bottom_2{ right_bottom_1 + 1 };
-
-    A_.push_back({ right_bottom_1, right_bottom_1, 1 });
-    b_[right_bottom_1] = 0.0;
-    A_.push_back({ right_bottom_2, right_bottom_2, 1 });
-    b_[right_bottom_2] = 0.0;
-
-    A_.push_back({ left_bottom_1, left_bottom_1, 1 });
-    b_[left_bottom_1] = 0.0;
-    A_.push_back({ left_bottom_2, left_bottom_2, 1 });
-    b_[left_bottom_2] = 0.0;
-
-    const std::size_t left_top_1{ 2 * grid_.convertIndices(0, grid_.Nz() - 1) };
-    const std::size_t left_top_2{ left_top_1 + 1 };
-    const std::size_t right_top_1{ 2 * grid_.convertIndices(grid_.Nr() - 1, grid_.Nz() - 1) };
-    const std::size_t right_top_2{ right_top_1 + 1 };
-
-    A_.push_back({ left_top_1, left_top_1, 1 });
-    b_[left_top_1] = 0.0;
-    A_.push_back({ right_top_1, right_top_1, 1 });
-    b_[right_top_1] = 0.0;
-
-    std::vector<Triplet> vectorV_left{};
-    std::vector<Triplet> vectorW_left{};
-    std::vector<Triplet> vectorV_right{};
-    std::vector<Triplet> vectorW_right{};
-
-    const std::size_t j{ grid_.Nz() - 1 };
-
-    pushMinorToMajor(discretization_.D_z_backward(0, j), vectorW_left, (2 * mu_ + lambda_));
-    pushMinorToMajor(discretization_.D_r_forward(0, j), vectorV_left, lambda_);
-    pushMinorToMajor(discretization_.D0(0, j), vectorV_left, lambda_ / inputData_.geometry().innerRadius);
-
-    pushMinorToMajor(discretization_.D_z_backward(grid_.Nr() - 1, j), vectorW_right, (2 * mu_ + lambda_));
-    pushMinorToMajor(discretization_.D_r_backward(grid_.Nr() - 1, j), vectorV_right, lambda_);
-    pushMinorToMajor(discretization_.D0(grid_.Nr() - 1, j), vectorV_right, lambda_ / inputData_.geometry().outerRadius);
-
-    addVectorToA_(vectorV_left, left_top_2, 0);
-    addVectorToA_(vectorW_left, left_top_2, 1);
-    b_[left_top_2] = inputData_.conditions().sigma_zz_H;
-    addVectorToA_(vectorV_right, right_top_2, 0);
-    addVectorToA_(vectorW_right, right_top_2, 1);
-    b_[right_top_2] = inputData_.conditions().sigma_zz_H;
+    implementCorners();
 }
 
 void FDSystem::fillSystem()
