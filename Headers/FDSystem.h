@@ -14,10 +14,6 @@ class FDSystem
 public:
     FDSystem(const Discretization&, const Grid&, const InputData&);
 
-    void implementEquations();
-    void implementBoundaries();
-    void fillSystem();
-
 private:
     const Discretization& discretization_;
     const Grid& grid_;
@@ -40,5 +36,9 @@ private:
 
     void addVectorToA_(const std::vector<Triplet>&, std::size_t, int);
     void pushMinorToMajor(const std::vector<Triplet>&, std::vector<Triplet>&, double mult = 1);
+
+    void implementEquations();
+    void implementBoundaries();
+    void fillSystem();
 
 };

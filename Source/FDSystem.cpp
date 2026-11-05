@@ -16,7 +16,9 @@ FDSystem::FDSystem(const Discretization& d, const Grid& g, const InputData& i)
     , lambda_(inputData_.properties().youngModulus* inputData_.properties().poissonRatio /
               ((1 + inputData_.properties().poissonRatio) * (1 - 2 * inputData_.properties().poissonRatio)))
 { 
+    A_.clear();
     b_.assign(2 * grid_.Nr() * grid_.Nz(), 0.0);
+    fillSystem();
 }
 
 std::array<std::vector<Triplet>, 2> FDSystem::eq1_left(std::size_t i, std::size_t j)
@@ -194,8 +196,6 @@ void FDSystem::implementBoundaries()
 
 void FDSystem::fillSystem()
 {
-    A_.clear();
-    b_.assign(2 * grid_.Nr() * grid_.Nz(), 0.0);
     implementEquations();
     implementBoundaries();
 }
