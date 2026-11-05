@@ -19,16 +19,15 @@ public:
     void fillSystem();
 
 private:
-    const double mu_{ inputData_.properties().youngModulus / (2 * (1 + inputData_.properties().poissonRatio)) };
-    const double lambda_{ inputData_.properties().youngModulus * inputData_.properties().poissonRatio /
-                          ((1 + inputData_.properties().poissonRatio) * (1 - 2 * inputData_.properties().poissonRatio)) };
+    const Discretization& discretization_;
+    const Grid& grid_;
+    const InputData& inputData_;
+    
+    const double mu_;
+    const double lambda_;
     
     std::vector<Triplet> A_{};
     std::vector<double>  b_{};
-
-    const Discretization& discretization_;
-    const Grid&           grid_;
-    const InputData&      inputData_;
 
     std::array<std::vector<Triplet>, 2> eq1_left(std::size_t, std::size_t);
     std::array<std::vector<Triplet>, 2> eq2_left(std::size_t, std::size_t);

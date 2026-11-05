@@ -25,6 +25,9 @@ struct BoundaryConditions
     static constexpr double w_z0{ 0.0 };
     static constexpr double v_zH{ 0.0 };
 
+    static constexpr double sigma_rz_Ri{ 0.0 };
+    static constexpr double sigma_rz_Ro{ 0.0 };
+
     double sigma_rr_Ri{};
     double sigma_rr_Ro{};
     double sigma_zz_H{};

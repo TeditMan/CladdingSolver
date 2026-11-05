@@ -12,6 +12,9 @@ FDSystem::FDSystem(const Discretization& d, const Grid& g, const InputData& i)
     : discretization_(d)
     , grid_(g)
     , inputData_(i)
+    , mu_(inputData_.properties().youngModulus / (2 * (1 + inputData_.properties().poissonRatio)))
+    , lambda_(inputData_.properties().youngModulus* inputData_.properties().poissonRatio /
+              ((1 + inputData_.properties().poissonRatio) * (1 - 2 * inputData_.properties().poissonRatio)))
 { 
     b_.assign(2 * grid_.Nr() * grid_.Nz(), 0.0);
 }
@@ -63,7 +66,7 @@ std::array<std::vector<Triplet>, 2> FDSystem::bound1_Ri_left(std::size_t j)
 
     pushMinorToMajor(discretization_.D_r_forward(0, j), vectorV, 2 * mu_ + lambda_);
     pushMinorToMajor(discretization_.D0(0, j), vectorV, lambda_ / inputData_.geometry().innerRadius);
-    pushMinorToMajor(discretization_.D_z_forward(0, j), vectorW, lambda_);
+    pushMinorToMajor(discretization_.D_z_central(0, j), vectorW, lambda_);
 
     return { vectorV, vectorW };
 }
@@ -73,7 +76,7 @@ std::array<std::vector<Triplet>, 2> FDSystem::bound2_Ri_left(std::size_t j)
     std::vector<Triplet> vectorV{};
     std::vector<Triplet> vectorW{};
 
-    pushMinorToMajor(discretization_.D_z_forward(0, j), vectorV, mu_);
+    pushMinorToMajor(discretization_.D_z_central(0, j), vectorV, mu_);
     pushMinorToMajor(discretization_.D_r_forward(0, j), vectorW, mu_);
 
     return { vectorV, vectorW };
@@ -84,9 +87,11 @@ std::array<std::vector<Triplet>, 2> FDSystem::bound1_Ro_left(std::size_t j)
     std::vector<Triplet> vectorV{};
     std::vector<Triplet> vectorW{};
 
-    pushMinorToMajor(discretization_.D_r_backward(0, j), vectorV, 2 * mu_ + lambda_);
-    pushMinorToMajor(discretization_.D0(0, j), vectorV, lambda_ / inputData_.geometry().innerRadius);
-    pushMinorToMajor(discretization_.D_z_backward(0, j), vectorW, lambda_);
+    const std::size_t i{ grid_.Nr() - 1 };
+
+    pushMinorToMajor(discretization_.D_r_backward(i, j), vectorV, 2 * mu_ + lambda_);
+    pushMinorToMajor(discretization_.D0(i, j), vectorV, lambda_ / inputData_.geometry().outerRadius);
+    pushMinorToMajor(discretization_.D_z_central(i, j), vectorW, lambda_);
 
     return { vectorV, vectorW };
 }
@@ -96,8 +101,10 @@ std::array<std::vector<Triplet>, 2> FDSystem::bound2_Ro_left(std::size_t j)
     std::vector<Triplet> vectorV{};
     std::vector<Triplet> vectorW{};
 
-    pushMinorToMajor(discretization_.D_z_backward(0, j), vectorV, mu_);
-    pushMinorToMajor(discretization_.D_r_backward(0, j), vectorW, mu_);
+    const std::size_t i{ grid_.Nr() - 1 };
+
+    pushMinorToMajor(discretization_.D_z_central(i, j), vectorV, mu_);
+    pushMinorToMajor(discretization_.D_r_backward(i, j), vectorW, mu_);
 
     return { vectorV, vectorW };
 }
@@ -162,7 +169,7 @@ void FDSystem::implementBoundaries()
         const std::size_t row2_Ri{ row1_Ri + 1 };
 
         const std::size_t row1_Ro{ 2 * grid_.convertIndices(grid_.Nr() - 1, j)};
-        const std::size_t row2_Ro{ row1_Ri + 1 };
+        const std::size_t row2_Ro{ row1_Ro + 1 };
 
 
         auto [V1_Ri, W1_Ri] = bound1_Ri_left(j);
@@ -175,19 +182,20 @@ void FDSystem::implementBoundaries()
         b_[row1_Ri] = inputData_.conditions().sigma_rr_Ri;
         addVectorToA_(V2_Ri, row2_Ri, 0);
         addVectorToA_(W2_Ri, row2_Ri, 1);
-        b_[row2_Ri] = inputData_.conditions().sigma_rr_Ri;
+        b_[row2_Ri] = inputData_.conditions().sigma_rz_Ri;
         addVectorToA_(V1_Ro, row1_Ro, 0);
         addVectorToA_(W1_Ro, row1_Ro, 1);
         b_[row1_Ro] = inputData_.conditions().sigma_rr_Ro;
         addVectorToA_(V2_Ro, row2_Ro, 0);
         addVectorToA_(W2_Ro, row2_Ro, 1);
-        b_[row2_Ro] = inputData_.conditions().sigma_rr_Ro;
+        b_[row2_Ro] = inputData_.conditions().sigma_rz_Ro;
     }
 }
 
 void FDSystem::fillSystem()
 {
     A_.clear();
+    b_.assign(2 * grid_.Nr() * grid_.Nz(), 0.0);
     implementEquations();
     implementBoundaries();
 }
