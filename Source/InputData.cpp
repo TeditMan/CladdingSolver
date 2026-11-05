@@ -36,7 +36,7 @@ InputData::InputData(Pressure pressure, Geometry geometry, MaterialProperties pr
 
     conditions_.sigma_rr_Ri = -pressure_.Pgap;
     conditions_.sigma_rr_Ro = -pressure_.Pcool;
-    conditions_.sigma_zz_H =
+    conditions_.sigma_zz_H  =
         (pressure.Pgap * geometry.innerRadius * geometry.innerRadius -
          pressure.Pcool * geometry.outerRadius * geometry.outerRadius) /
         (geometry.outerRadius * geometry.outerRadius -

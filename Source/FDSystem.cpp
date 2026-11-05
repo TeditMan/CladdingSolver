@@ -12,7 +12,9 @@ FDSystem::FDSystem(const Discretization& d, const Grid& g, const InputData& i)
     : discretization_(d)
     , grid_(g)
     , inputData_(i)
-{ }
+{ 
+    b_.assign(2 * grid_.Nr() * grid_.Nz(), 0.0);
+}
 
 std::array<std::vector<Triplet>, 2> FDSystem::eq1_left(std::size_t i, std::size_t j)
 {
@@ -54,6 +56,52 @@ std::array<std::vector<Triplet>, 2> FDSystem::eq2_left(std::size_t i, std::size_
     return { vectorV, vectorW };
 }
 
+std::array<std::vector<Triplet>, 2> FDSystem::bound1_Ri_left(std::size_t j)
+{   
+    std::vector<Triplet> vectorV{};
+    std::vector<Triplet> vectorW{};
+
+    pushMinorToMajor(discretization_.D_r_forward(0, j), vectorV, 2 * mu_ + lambda_);
+    pushMinorToMajor(discretization_.D0(0, j), vectorV, lambda_ / inputData_.geometry().innerRadius);
+    pushMinorToMajor(discretization_.D_z_forward(0, j), vectorW, lambda_);
+
+    return { vectorV, vectorW };
+}
+
+std::array<std::vector<Triplet>, 2> FDSystem::bound2_Ri_left(std::size_t j)
+{
+    std::vector<Triplet> vectorV{};
+    std::vector<Triplet> vectorW{};
+
+    pushMinorToMajor(discretization_.D_z_forward(0, j), vectorV, mu_);
+    pushMinorToMajor(discretization_.D_r_forward(0, j), vectorW, mu_);
+
+    return { vectorV, vectorW };
+}
+
+std::array<std::vector<Triplet>, 2> FDSystem::bound1_Ro_left(std::size_t j)
+{   
+    std::vector<Triplet> vectorV{};
+    std::vector<Triplet> vectorW{};
+
+    pushMinorToMajor(discretization_.D_r_backward(0, j), vectorV, 2 * mu_ + lambda_);
+    pushMinorToMajor(discretization_.D0(0, j), vectorV, lambda_ / inputData_.geometry().innerRadius);
+    pushMinorToMajor(discretization_.D_z_backward(0, j), vectorW, lambda_);
+
+    return { vectorV, vectorW };
+}
+
+std::array<std::vector<Triplet>, 2> FDSystem::bound2_Ro_left(std::size_t j)
+{
+    std::vector<Triplet> vectorV{};
+    std::vector<Triplet> vectorW{};
+
+    pushMinorToMajor(discretization_.D_z_backward(0, j), vectorV, mu_);
+    pushMinorToMajor(discretization_.D_r_backward(0, j), vectorW, mu_);
+
+    return { vectorV, vectorW };
+}
+
 void FDSystem::pushMinorToMajor(const std::vector<Triplet>& minor, std::vector<Triplet>& major, double mult)
 {
     for (Triplet cand : minor)
@@ -77,10 +125,17 @@ void FDSystem::pushMinorToMajor(const std::vector<Triplet>& minor, std::vector<T
     }
 }
 
-void FDSystem::fillMatrix()
+void FDSystem::addVectorToA_(const std::vector<Triplet>& Vector, std::size_t row, int type)
 {
-    A_.clear();
-    
+    for (Triplet tr : Vector)
+    {
+        const std::size_t column{ 2 * grid_.convertIndices(tr.i, tr.j) + type };
+        A_.push_back({ row, column, tr.value });
+    }
+}
+
+void FDSystem::implementEquations()
+{
     for (std::size_t j{ 1 }; j < grid_.Nz() - 1; ++j)
     {
         for (std::size_t i{ 1 }; i < grid_.Nr() - 1; ++i)
@@ -91,29 +146,48 @@ void FDSystem::fillMatrix()
             auto [V1, W1] = eq1_left(i, j);
             auto [V2, W2] = eq2_left(i, j);
 
-            for (Triplet tr : V1)
-            {
-                const std::size_t column{ 2 * grid_.convertIndices(tr.i, tr.j) };
-                A_.push_back({ row1, column, tr.value });
-            }
-
-            for (Triplet tr : W1)
-            {
-                const std::size_t column{ 2 * grid_.convertIndices(tr.i, tr.j) + 1 };
-                A_.push_back({ row1, column, tr.value });
-            }
-
-            for (Triplet tr : V2)
-            {
-                const std::size_t column{ 2 * grid_.convertIndices(tr.i, tr.j) };
-                A_.push_back({ row2, column, tr.value });
-            }
-
-            for (Triplet tr : W2)
-            {
-                const std::size_t column{ 2 * grid_.convertIndices(tr.i, tr.j) + 1 };
-                A_.push_back({ row2, column, tr.value });
-            }
+            addVectorToA_(V1, row1, 0);
+            addVectorToA_(W1, row1, 1);
+            addVectorToA_(V2, row2, 0);
+            addVectorToA_(W2, row2, 1);
         }
     }
+}
+
+void FDSystem::implementBoundaries()
+{
+    for (std::size_t j{ 1 }; j < grid_.Nz() - 1; ++j)
+    {
+        const std::size_t row1_Ri{ 2 * grid_.convertIndices(0, j) };
+        const std::size_t row2_Ri{ row1_Ri + 1 };
+
+        const std::size_t row1_Ro{ 2 * grid_.convertIndices(grid_.Nr() - 1, j)};
+        const std::size_t row2_Ro{ row1_Ri + 1 };
+
+
+        auto [V1_Ri, W1_Ri] = bound1_Ri_left(j);
+        auto [V2_Ri, W2_Ri] = bound2_Ri_left(j);
+        auto [V1_Ro, W1_Ro] = bound1_Ro_left(j);
+        auto [V2_Ro, W2_Ro] = bound2_Ro_left(j);
+
+        addVectorToA_(V1_Ri, row1_Ri, 0);
+        addVectorToA_(W1_Ri, row1_Ri, 1);
+        b_[row1_Ri] = inputData_.conditions().sigma_rr_Ri;
+        addVectorToA_(V2_Ri, row2_Ri, 0);
+        addVectorToA_(W2_Ri, row2_Ri, 1);
+        b_[row2_Ri] = inputData_.conditions().sigma_rr_Ri;
+        addVectorToA_(V1_Ro, row1_Ro, 0);
+        addVectorToA_(W1_Ro, row1_Ro, 1);
+        b_[row1_Ro] = inputData_.conditions().sigma_rr_Ro;
+        addVectorToA_(V2_Ro, row2_Ro, 0);
+        addVectorToA_(W2_Ro, row2_Ro, 1);
+        b_[row2_Ro] = inputData_.conditions().sigma_rr_Ro;
+    }
+}
+
+void FDSystem::fillSystem()
+{
+    A_.clear();
+    implementEquations();
+    implementBoundaries();
 }

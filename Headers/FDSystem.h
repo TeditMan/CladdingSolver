@@ -14,9 +14,15 @@ class FDSystem
 public:
     FDSystem(const Discretization&, const Grid&, const InputData&);
 
-    void fillMatrix();
+    void implementEquations();
+    void implementBoundaries();
+    void fillSystem();
 
 private:
+    const double mu_{ inputData_.properties().youngModulus / (2 * (1 + inputData_.properties().poissonRatio)) };
+    const double lambda_{ inputData_.properties().youngModulus * inputData_.properties().poissonRatio /
+                          ((1 + inputData_.properties().poissonRatio) * (1 - 2 * inputData_.properties().poissonRatio)) };
+    
     std::vector<Triplet> A_{};
     std::vector<double>  b_{};
 
@@ -27,6 +33,13 @@ private:
     std::array<std::vector<Triplet>, 2> eq1_left(std::size_t, std::size_t);
     std::array<std::vector<Triplet>, 2> eq2_left(std::size_t, std::size_t);
 
+    std::array<std::vector<Triplet>, 2> bound1_Ri_left(std::size_t);
+    std::array<std::vector<Triplet>, 2> bound2_Ri_left(std::size_t);
+
+    std::array<std::vector<Triplet>, 2> bound1_Ro_left(std::size_t);
+    std::array<std::vector<Triplet>, 2> bound2_Ro_left(std::size_t);
+
+    void addVectorToA_(const std::vector<Triplet>&, std::size_t, int);
     void pushMinorToMajor(const std::vector<Triplet>&, std::vector<Triplet>&, double mult = 1);
 
 };
